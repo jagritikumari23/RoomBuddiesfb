@@ -10,7 +10,7 @@ const Landing = () => {
   const { signInAsGuest, user, isGuest, loading } = useAuth();
   const [showFeatures, setShowFeatures] = useState(false);
 
-  useEffect(() => {
+  useEffect(() => { 
     // If user is already authenticated or in guest mode, redirect to dashboard
     if (!loading && (user || isGuest)) {
       navigate("/dashboard");
