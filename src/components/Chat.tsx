@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+// import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMatching } from "@/contexts/MatchingContext";
+import { getFirestore, collection, addDoc, onSnapshot } from "firebase/firestore";
+import { app } from "@/firebaseConfig";
 
 interface ChatMessage {
   id: string;
@@ -14,6 +16,8 @@ interface ChatMessage {
   content: string;
   ts: number;
 }
+
+const db = getFirestore(app);
 
 const Chat = () => {
   const { user } = useAuth();
@@ -32,20 +36,31 @@ const Chat = () => {
   const [text, setText] = useState("");
   const listRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    const channel = supabase.channel(room, { config: { broadcast: { self: true } } });
+  const sendMessage = async (messageContent) => {
+    try {
+      await addDoc(collection(db, "messages"), {
+        content: messageContent,
+        timestamp: new Date(),
+        userId: me,
+      });
+    } catch (error) {
+      console.error("Error adding document: ", error);
+    }
+  };
 
-    const sub = channel.on("broadcast", { event: "message" }, (payload) => {
-      const msg = payload.payload as ChatMessage;
-      setMessages(prev => [...prev, msg].slice(-200));
-    }).subscribe((status) => {
-      if (status === "SUBSCRIBED") {
-        // Optionally send a join message or fetch history from DB in future
-      }
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "messages"), (snapshot) => {
+      const messages = snapshot.docs.map(doc => ({
+        id: doc.id,
+        userId: doc.data().userId,
+        content: doc.data().content,
+        ts: doc.data().timestamp // Ensure this matches your Firestore field
+      }));
+      setMessages(messages);
     });
 
-    return () => { channel.unsubscribe(); };
-  }, [room]);
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     // auto scroll to bottom
@@ -57,14 +72,8 @@ const Chat = () => {
   const send = async () => {
     const content = text.trim();
     if (!content) return;
-    const msg: ChatMessage = {
-      id: crypto.randomUUID(),
-      userId: me,
-      content,
-      ts: Date.now(),
-    };
+    await sendMessage(content);
     setText("");
-    await supabase.channel(room).send({ type: "broadcast", event: "message", payload: msg });
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
