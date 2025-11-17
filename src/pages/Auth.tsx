@@ -113,7 +113,7 @@ const Auth = () => {
     setError("");
 
     const { error } = await signInWithGoogle();
-    
+
     if (error) {
       setError(error.message);
       toast({
@@ -122,8 +122,10 @@ const Auth = () => {
         variant: "destructive",
       });
       setOauthLoading(false);
+    } else {
+      // Successful sign-in, navigate to dashboard
+      navigate("/dashboard");
     }
-    // Note: For OAuth, the redirect happens automatically, so we don't need to navigate here
   };
 
   return (

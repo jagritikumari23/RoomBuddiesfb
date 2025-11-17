@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth } from "@/firebaseConfig"; // Import Firebase auth
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "firebase/auth";
 
 interface AuthContextType {
   user: any | null;
@@ -36,7 +36,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (guestMode) {
       setIsGuest(true);
       setLoading(false);
+      return;
     }
+
+    // Listen for Firebase auth state changes
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user);
+        console.log('User is signed in:', user);
+      } else {
+        setUser(null);
+        console.log('User is signed out');
+      }
+      setLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string) => {
@@ -61,8 +77,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInWithGoogle = async () => {
-    // TODO: Implement Google sign in with Firebase
-    return { error: 'Not implemented' };
+    try {
+      console.log('Starting Google sign-in...');
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      setUser(result.user);
+      console.log('Google sign-in successful:', result.user);
+      return { error: null };
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      return { error };
+    }
   };
 
   const signInAsGuest = () => {
