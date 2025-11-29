@@ -8,6 +8,7 @@ import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMatching } from "@/contexts/MatchingContext";
 import { sendMessage, subscribeToMessages, Message } from "@/services/chatService";
+import { app } from "@/firebaseConfig";
 
 const Chat = () => {
   const { user } = useAuth();

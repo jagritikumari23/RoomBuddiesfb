@@ -1,9 +1,10 @@
 // firebaseConfig.js
 import { initializeApp } from "firebase/app";
-import { getAnalytics, isSupported } from "firebase/analytics";
+import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { initializeFirestore, getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { getAnalytics, isSupported } from "firebase/analytics";
 
+// Your Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDKJYj3DN57Xuzt93MHxbThoOo_cEKGVhs",
   authDomain: "roombuddiesfb.firebaseapp.com",
@@ -15,7 +16,7 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+export const app = initializeApp(firebaseConfig);
 
 // Initialize Analytics only in browser environment
 let analytics;
@@ -26,18 +27,16 @@ isSupported().then(supported => {
 // Initialize Auth
 const auth = getAuth(app);
 
-// Initialize Firestore with explicit settings
-const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true, // Helps with some network issues
-  useFetchStreams: false // Disable fetch streams for better compatibility
-});
+// Initialize Firestore
+const db = getFirestore(app);
 
 // Log Firestore initialization
-console.log('Firestore initialized with settings:', {
-  type: 'Firestore',
+console.log('Firebase initialized with settings:', {
+  type: 'Firebase',
   app: app.name,
   projectId: firebaseConfig.projectId
 });
 
-// Export all Firebase services
-export { app, auth, db, analytics };
+// Export Firebase services
+export { auth, db, analytics };
+// Note: app is already exported above
