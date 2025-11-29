@@ -104,15 +104,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Starting Google sign-in...');
       const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
+      
+      // Add scopes if needed
+      provider.addScope('profile');
+      provider.addScope('email');
+      
+      console.log('Opening Google sign-in popup...');
+      const result = await signInWithPopup(auth, provider).catch(error => {
+        console.error('Google sign-in popup error:', {
+          code: error.code,
+          message: error.message,
+          email: error.email,
+          credential: error.credential
+        });
+        throw error;
+      });
+      
       const user = result.user;
+      console.log('Google authentication successful, user:', {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName
+      });
       
       // Check if user document exists
       const db = getFirestore();
+      console.log('Checking for existing user document...');
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       
       if (!userDoc.exists()) {
-        // Create user profile in Firestore
+        console.log('Creating new user document...');
         const userProfile: UserProfile = {
           uid: user.uid,
           email: user.email || '',
@@ -124,14 +145,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         
         await setDoc(doc(db, 'users', user.uid), userProfile);
+        console.log('User document created');
         await findMatchesForNewUser(user.uid, userProfile);
+      } else {
+        console.log('User document already exists');
       }
       
       setUser(user);
-      console.log('Google sign-in successful:', user);
       return { error: null };
     } catch (error) {
-      console.error('Google sign-in error:', error);
+      console.error('Google sign-in error:', {
+        name: error.name,
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
       return { error };
     }
   };
