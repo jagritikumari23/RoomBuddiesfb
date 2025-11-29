@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useState, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Save, User, X } from "lucide-react";
+import { updateUserProfile } from '@/services/userService';
 
 // List of all Indian states and union territories
 const INDIAN_STATES = [

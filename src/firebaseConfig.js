@@ -1,9 +1,8 @@
 // firebaseConfig.js
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-
+import { getAnalytics, isSupported } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
-// Add other Firebase services as needed
+import { initializeFirestore, getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDKJYj3DN57Xuzt93MHxbThoOo_cEKGVhs",
@@ -17,12 +16,28 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 
-// Initialize Firebase Authentication
-export const auth = getAuth(app);
+// Initialize Analytics only in browser environment
+let analytics;
+isSupported().then(supported => {
+  if (supported) analytics = getAnalytics(app);
+});
 
-// Export the app instance
-export { app };
+// Initialize Auth
+const auth = getAuth(app);
 
-// Export other Firebase services as needed
+// Initialize Firestore with explicit settings
+const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true, // Helps with some network issues
+  useFetchStreams: false // Disable fetch streams for better compatibility
+});
+
+// Log Firestore initialization
+console.log('Firestore initialized with settings:', {
+  type: 'Firestore',
+  app: app.name,
+  projectId: firebaseConfig.projectId
+});
+
+// Export all Firebase services
+export { app, auth, db, analytics };

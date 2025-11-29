@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth } from "@/firebaseConfig"; // Import Firebase auth
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "firebase/auth";
+import { doc, setDoc, getDoc, getFirestore } from 'firebase/firestore';
+import { findMatchesForNewUser } from '@/services/matchingService';
+import type { UserProfile } from '@/services/matchingService.types';
 
 interface AuthContextType {
   user: any | null;
@@ -57,11 +60,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
+      // Create user account
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      // Additional user setup if needed
-      setUser(userCredential.user);
+      const user = userCredential.user;
+      
+      // Create user profile in Firestore
+      const userProfile: UserProfile = {
+        uid: user.uid,
+        email: user.email || '',
+        fullName,
+        preferences: {
+          smoking: false, // Default values, can be updated later
+          pets: false,
+        },
+      };
+      
+      // Save user profile to Firestore
+      const db = getFirestore();
+      await setDoc(doc(db, 'users', user.uid), userProfile);
+      
+      // Find matches for the new user
+      await findMatchesForNewUser(user.uid, userProfile);
+      
+      setUser(user);
       return { error: null };
     } catch (error) {
+      console.error('Signup error:', error);
       return { error };
     }
   };
@@ -81,8 +105,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Starting Google sign-in...');
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      setUser(result.user);
-      console.log('Google sign-in successful:', result.user);
+      const user = result.user;
+      
+      // Check if user document exists
+      const db = getFirestore();
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      
+      if (!userDoc.exists()) {
+        // Create user profile in Firestore
+        const userProfile: UserProfile = {
+          uid: user.uid,
+          email: user.email || '',
+          fullName: user.displayName || 'New User',
+          preferences: {
+            smoking: false,
+            pets: false,
+          },
+        };
+        
+        await setDoc(doc(db, 'users', user.uid), userProfile);
+        await findMatchesForNewUser(user.uid, userProfile);
+      }
+      
+      setUser(user);
+      console.log('Google sign-in successful:', user);
       return { error: null };
     } catch (error) {
       console.error('Google sign-in error:', error);

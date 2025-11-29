@@ -13,6 +13,9 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import Modal from "@/components/ui/Modal";
 import DatePicker from "@/components/ui/DatePicker";
+import { MatchesList } from '@/components/MatchesList';
+
+
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -62,21 +65,20 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="container mx-auto px-6 py-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Welcome back, {userName}!</h1>
-          <p className="text-muted-foreground">Let's find your perfect roommate match</p>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Welcome back, {userName}!</h1>
+          <p className="text-muted-foreground">Here's what's happening with your matches and hostels.</p>
         </div>
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon">
-            <Bell className="w-4 h-4" />
-          </Button>
-          <Avatar>
-            <AvatarImage src={profile1} />
-            <AvatarFallback>EM</AvatarFallback>
-          </Avatar>
+
+        {/* Matches List */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold mb-4">Your Matches</h2>
+          <Card className="p-6 shadow-soft">
+            <MatchesList />
+          </Card>
         </div>
       </div>
 
